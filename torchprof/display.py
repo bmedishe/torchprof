@@ -68,20 +68,29 @@ def _build_measure_tuple(events, occurrences):
         occurrences=occurrences,
     )
 
+def format_time(time_us):
+    """Defines how to format time in FunctionEvent"""
+    US_IN_SECOND = 1000.0 * 1000.0
+    US_IN_MS = 1000.0
+    if time_us >= US_IN_SECOND:
+        return '{:.3f}s'.format(time_us / US_IN_SECOND)
+    if time_us >= US_IN_MS:
+        return '{:.3f}ms'.format(time_us / US_IN_MS)
+    return '{:.3f}us'.format(time_us)
 
 def _format_measure_tuple(measure):
     format_memory = getattr(torch_profiler, "format_memory", lambda _: "N/A")
 
     self_cpu_total = (
-        torch_profiler.format_time(measure.self_cpu_total) if measure else ""
+        format_time(measure.self_cpu_total) if measure else ""
     )
-    cpu_total = torch_profiler.format_time(measure.cpu_total) if measure else ""
+    cpu_total = format_time(measure.cpu_total) if measure else ""
     self_cuda_total = (
-        torch_profiler.format_time(measure.self_cuda_total)
+        format_time(measure.self_cuda_total)
         if measure and measure.self_cuda_total is not None
         else ""
     )
-    cuda_total = torch_profiler.format_time(measure.cuda_total) if measure else ""
+    cuda_total = format_time(measure.cuda_total) if measure else ""
     self_cpu_memory = (
         format_memory(measure.self_cpu_memory)
         if measure and measure.self_cpu_memory is not None
@@ -155,6 +164,7 @@ def traces_to_display(
                 if show_events:
                     for event_name, event_group in group_by(events, lambda e: e.name):
                         event_group = list(event_group)
+                        event_name = event_name[:75]
                         current_tree[name][event_name] = {
                             None: _build_measure_tuple(event_group, len(event_group))
                         }
